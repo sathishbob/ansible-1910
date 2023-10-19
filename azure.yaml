@@ -1,0 +1,67 @@
+---
+- hosts: localhost
+  tasks:
+  - name: Create a resource group
+    azure.azcollection.azure_rm_resourcegroup:
+      name: trainer
+      location: East US
+    register: rg
+
+  - name: Create virtual network
+    azure_rm_virtualnetwork:
+      name: trainervnet
+      resource_group: trainer
+      address_prefixes_cidr: 10.0.0.0/16
+    register: vnet
+
+  - name: Create subnet
+    azure_rm_subnet:
+      name: trainersubnet
+      resource_group: trainer
+      virtual_network_name: trainervnet
+      address_prefixes: "10.0.0.0/24"
+
+  - name: Create Public IP address
+    azure_rm_publicipaddress:
+      name: trainerpublicip
+      resource_group: trainer
+      allocation_method: Dynamic
+
+  - name: Create network unterface
+    azure_rm_networkinterface:
+      name: trainernic
+      resource_group: trainer
+      location: East US
+      virtual_network_name: trainervnet
+      subnet_name: trainersubnet
+      public_ip_name: trainerpublicip
+
+  - name: Create a network security group
+    azure_rm_securitygroup:
+      name: trainernsg
+      resource_group: trainer
+      rules:
+        - name: SSH
+          access: Allow
+          direction: Inbound
+          priority: 100
+          protocol: Tcp
+          source_port_range: "*"
+          source_address_prefix: "*"
+          destination_port_range: 22
+          destination_address_prefix: "*"
+
+  - name: Create virtual machine
+    azure_rm_virtualmachine:
+      name: trainervm
+      resource_group: trainer
+      location: East US
+      vm_size: Standard_D2s_v3
+      admin_username: trainer
+      admin_password: TrainerP@ssw0rd
+      image:
+        offer: UbuntuServer
+        publisher: Canonical
+        sku: 18.04-LTS
+        version: 18.04.201804262
+      network_interfaces: trainernic
