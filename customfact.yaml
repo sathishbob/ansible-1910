@@ -15,6 +15,6 @@
   - name: reload the fact
     setup:
       filter: ansible_local
-  - name: print the custom fact
+  - name: print the custom facts
     debug:
       msg: " custom fact is {{ ansible_local.date_time }}"
